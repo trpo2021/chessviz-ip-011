@@ -8,3 +8,5 @@ chessviz
 *.d
 *.a
 *.txt
+chessviz-test
+.keep
