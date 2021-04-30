@@ -1,77 +1,59 @@
-#include "libchessviz/board_read.h"
-#include "libchessviz/board.h"
-#include "libchessviz/board_print_plain.h"
-#include "libchessviz/move.h"
+#include <libchessviz/chess.h>
+#include <libchessviz/chess_read.h>
+#include <libchessviz/chessboard_create.h>
+#include <libchessviz/chessboard_print_plain.h>
 #include <stdio.h>
+#include <string.h>
 
-int main()
+int main(int argc, char** argv)
 {
-    char board[9][9];
-    char moveChess[11];
-    int check = 0;
+    FILE* f;
+    char* filename;
 
-    fillBoard(board);
-    printBoard(board);
+    Moves moves;
+    moves.count = 0;
+    Chessboard chessboard;
+    char string[(CHESSBOARD_SIZE + 1) * (CHESSBOARD_SIZE + 1) * 2 + 1];
+    char inputString[64];
 
-    printf("Move example: e2-e4 \nType 0 to exit program");
+    ParseError parseError = {.errtype = ParseErrorTypeNone};
+    MoveError moveError = {.errtype = MoveErrorTypeNone};
 
-    while (1) {
-        printf("\nType a move: ");
-        readBoard(moveChess);
+    if (argc == 1) {
+        printf("Usage: chessviz <filename>");
+        return 0;
+    }
 
-        check = move(board, moveChess);
+    filename = argv[1];
+    f = fopen(filename, "r");
 
-        if (check == 1) {
-            printf("\nInput data fail\n");
-            break;
+    while (fgets(inputString, 64, f) != NULL) {
+        printf("%s", inputString);
+        if (parseStep(inputString, &moves, &parseError)) {
+            printf("\n%s", parseError.errstr);
+            return 0;
         }
-
-        if (check == 2) {
-            printf("\n\nExiting program\n");
-            break;
+    }
+    createChessboard(
+            &chessboard,
+            "rnbqkbnr"
+            "pppppppp"
+            "        "
+            "        "
+            "        "
+            "        "
+            "PPPPPPPP"
+            "RNBQKBNR");
+    int errnum = 0;
+    for (int i = 0; i < moves.count; i++) {
+        errnum = doMove(moves, i, &chessboard, &moveError);
+        if (errnum) {
+            printf("\n%s\n", moveError.errstr);
+            return 1;
         }
-        
-        if (check == 3) {
-            printf("\n\nWrong figure chosen. Must be Pawn\n");
-            break;
-        }
+        chessboardToString(&chessboard, string);
 
-        if (check == 4) {
-            printf("\n\nWrong figure chosen. Must be King\n");
-            break;
-        }
-
-        if (check == 5) {
-            printf("\n\nStep out of border\n");
-            break;
-        }
-
-        if (check == 6) {
-            printf("\n\nWrong figure chosen. Must be Queen\n");
-            break;
-        }
-
-        if (check == 7) {
-            printf("\n\nWrong figure chosen. Must be Rook\n");
-            break;
-        }
-
-        if (check == 8) {
-            printf("\n\nWrong figure chosen. Must be knight\n");
-            break;
-        }
-
-        if (check == 9) {
-            printf("\n\nWrong figure chosen. Must be Bishop\n");
-            break;
-        }
-
-        if (check == 10) {
-            printf("\n\nCheckmate, well done!\n");
-            break;
-        }
-
-        printBoard(board);
+        printf("\n%s", string);
     }
 
     return 0;
