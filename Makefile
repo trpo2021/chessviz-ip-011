@@ -1,10 +1,13 @@
 APP_NAME = chessviz
-TEST_NAME = test
 LIB_NAME = libchessviz
+TEST_APP_NAME = chessviz-test
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
-CPPFLAGS = -I src -I thirdparty -MP -MMD
+RM = rm -rf
+
+CFLAGS = -Wall -Wextra -Werror -std=c11
+CPPFLAGS = -I src -MP -MMD
+CPPFLAGS_TEST = -I src -I thirdparty -MP -MMD
 LDFLAGS =
 LDLIBS =
 
@@ -12,25 +15,24 @@ BIN_DIR = bin
 OBJ_DIR = obj
 SRC_DIR = src
 TEST_DIR = test
-TP_DIR = thirdparty
 
 APP_PATH = $(BIN_DIR)/$(APP_NAME)
-TEST_PATH = $(BIN_DIR)/$(TEST_NAME)
-CTEST_PATH = $(TP_DIR)/ctest.h
 LIB_PATH = $(OBJ_DIR)/$(SRC_DIR)/$(LIB_NAME)/$(LIB_NAME).a
+TEST_APP_PATH = $(BIN_DIR)/$(TEST_APP_NAME)
 
 SRC_EXT = c
 
 APP_SOURCES = $(shell find $(SRC_DIR)/$(APP_NAME) -name '*.$(SRC_EXT)')
 APP_OBJECTS = $(APP_SOURCES:$(SRC_DIR)/%.$(SRC_EXT)=$(OBJ_DIR)/$(SRC_DIR)/%.o)
 
-TEST_SOURCES = $(shell find $(TEST_DIR)/ -name '*.$(SRC_EXT)')
-TEST_OBJECTS = $(TEST_SOURCES:$(TEST_DIR)/%.$(SRC_EXT)=$(OBJ_DIR)/$(TEST_DIR)/%.o)
-
 LIB_SOURCES = $(shell find $(SRC_DIR)/$(LIB_NAME) -name '*.$(SRC_EXT)')
 LIB_OBJECTS = $(LIB_SOURCES:$(SRC_DIR)/%.$(SRC_EXT)=$(OBJ_DIR)/$(SRC_DIR)/%.o)
 
-DEPS = $(APP_OBJECTS:.o=.d) $(LIB_OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
+TEST_APP_SOURCES = $(shell find $(TEST_DIR) -name '*.$(SRC_EXT)')
+TEST_APP_OBJECTS = $(TEST_APP_SOURCES:$(TEST_DIR)/%.$(SRC_EXT)=$(OBJ_DIR)/$(TEST_DIR)/%.o)
+
+DEPS = $(APP_OBJECTS:.o=.d) $(LIB_OBJECTS:.o=.d)
+TEST_DEPS = $(TEST_APP_OBJECTS:.o=.d) $(LIB_OBJECTS:.o=.d)
 
 .PHONY: all
 all: $(APP_PATH)
@@ -39,23 +41,30 @@ all: $(APP_PATH)
 
 $(APP_PATH): $(APP_OBJECTS) $(LIB_PATH)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@ $(LDFLAGS) $(LDLIBS)
-	
-.PHONY: test
-
-test: $(TEST_PATH)
-	$(TEST_PATH)
-	
-$(TEST_PATH): $(TEST_OBJECTS) $(LIB_PATH) $(CTEST_PATH)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(TEST_OBJECTS) $(LIB_PATH) -o $@ $(LDFLAGS) $(LDLIBS)
 
 $(LIB_PATH): $(LIB_OBJECTS)
 	ar rcs $@ $^
 
-$(OBJ_DIR)/%.o: %.c
+$(OBJ_DIR)/$(SRC_DIR)/$(APP_NAME)/%.o: $(SRC_DIR)/$(APP_NAME)/%.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
-		
+
+$(OBJ_DIR)/$(SRC_DIR)/$(LIB_NAME)/%.o: $(SRC_DIR)/$(LIB_NAME)/%.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+.PHONY: test
+test: $(TEST_APP_PATH)
+	./$(TEST_APP_PATH)
+
+-include $(TEST_DEPS)
+
+$(TEST_APP_PATH): $(TEST_APP_OBJECTS) $(LIB_PATH)
+	$(CC) $(CFLAGS) $(CPPFLAGS_TEST) $^ -o $@ $(LDFLAGS) $(LDLIBS)
+
+$(OBJ_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS_TEST) $< -o $@
+
 .PHONY: clean
 clean:
-	$(RM) $(APP_PATH) $(LIB_PATH)
+	$(RM) $(APP_PATH) $(LIB_PATH) $(TEST_APP_PATH)
 	find $(OBJ_DIR) -name '*.o' -exec $(RM) '{}' \;
 	find $(OBJ_DIR) -name '*.d' -exec $(RM) '{}' \;
