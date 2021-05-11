@@ -1,60 +1,33 @@
-#include <libchessviz/chess.h>
-#include <libchessviz/chess_read.h>
-#include <libchessviz/chessboard_create.h>
-#include <libchessviz/chessboard_print_plain.h>
+#include <libchessviz/board_print_plain.h>
+#include <libchessviz/constants.h>
+#include <libchessviz/fill_board_std.h>
+#include <libchessviz/scan.h>
 #include <stdio.h>
-#include <string.h>
 
-int main(int argc, char** argv)
+int main()
 {
-    FILE* f;
-    char* filename;
-
-    Moves moves;
-    moves.count = 0;
-    Chessboard chessboard;
-    char string[(CHESSBOARD_SIZE + 1) * (CHESSBOARD_SIZE + 1) * 2 + 1];
-    char inputString[64];
-
-    ParseError parseError = {.errtype = ParseErrorTypeNone};
-    MoveError moveError = {.errtype = MoveErrorTypeNone};
-
-    if (argc == 1) {
-        printf("Usage: chessviz <filename>");
-        return 0;
-    }
-
-    filename = argv[1];
-    f = fopen(filename, "r");
-
-    while (fgets(inputString, 64, f) != NULL) {
-        printf("%s", inputString);
-        if (parseStep(inputString, &moves, &parseError)) {
-            printf("\n%s", parseError.errstr);
+    int result;
+    char board[BOARDSIZE][BOARDSIZE];
+    fill_board_std(board);
+    while (1) {
+        print_board(board);
+        result = scan_step(board);
+        if (result == 999) { //Завершение.
+            print_board(board);
             return 0;
         }
-    }
-    createChessboard(
-            &chessboard,
-            "rnbqkbnr"
-            "pppppppp"
-            "        "
-            "        "
-            "        "
-            "        "
-            "PPPPPPPP"
-            "RNBQKBNR");
-    int errnum = 0;
-    for (int i = 0; i < moves.count; i++) {
-        errnum = doMove(moves, i, &chessboard, &moveError);
-        if (errnum) {
-            printf("\n%s\n", moveError.errstr);
+        //Вывод ошибки и возвращение значения.
+        if (result == 1) {
+            printf("\nВыход за пределы доски.\n");
             return 1;
         }
-        chessboardToString(&chessboard, string);
-
-        printf("\n%s", string);
+        if (result == 2) {
+            printf("\nФигура не соответствует фактической.\n");
+            return 2;
+        }
+        if (result == 3) {
+            printf("\nНеверный тип хода.\n");
+            return 3;
+        }
     }
-
-    return 0;
 }

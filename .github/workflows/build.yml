@@ -1,6 +1,5 @@
 name: Build
 
-
 on: push
 
 jobs:
@@ -12,9 +11,6 @@ jobs:
 
       - name: Check codestyle
         run: git ls-files *.{c,h} | xargs clang-format -i && git diff --exit-code
-
-      - name: Test application
-        run: make test
 
       - name: Build application
         run: make
