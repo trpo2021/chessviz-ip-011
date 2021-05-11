@@ -1,6 +1,4 @@
 *.out
 main
-
 .vscode
-
 bin/chessviz
