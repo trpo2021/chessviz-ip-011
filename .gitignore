@@ -1,12 +1,5 @@
-.vs
-*.exe
-*.o
-chessviz
-!chessviz/
-*.run
-*.elf
-*.d
-*.a
-*.txt
-chessviz-test
-.keep
+*.out
+main
+.vscode
+bin/*
+!bin/.keep
